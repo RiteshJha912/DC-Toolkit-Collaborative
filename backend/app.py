@@ -3,49 +3,59 @@ from flask_cors import CORS
 import phonenumbers
 from phonenumbers import geocoder, carrier, timezone
 import requests
+import instaloader
+import tweepy
 from dotenv import load_dotenv
 import os
 
-load_dotenv() 
+load_dotenv()
 
 app = Flask(__name__)
 CORS(app)
+
 def get_basic_phone_info(phonenumber):
-    number = phonenumbers.parse(phonenumber)
-    country = geocoder.description_for_number(number, 'en')
-    service_provider = carrier.name_for_number(number, 'en')
-    timezones = timezone.time_zones_for_number(number)
-    return country, service_provider, timezones
+    try:
+        number = phonenumbers.parse(phonenumber)
+        country = geocoder.description_for_number(number, 'en')
+        service_provider = carrier.name_for_number(number, 'en')
+        timezones = timezone.time_zones_for_number(number)
+        return {
+            "Country": country,
+            "Service Provider": service_provider,
+            "Timezones": ", ".join(timezones)
+        }
+    except phonenumbers.phonenumberutil.NumberParseException:
+        return {"Error": "Invalid phone number."}
 
 def get_numverify_info(phonenumber):
     api_key = os.getenv('NUMVERIFY_API_KEY')
     url = f"http://apilayer.net/api/validate?access_key={api_key}&number={phonenumber}"
     response = requests.get(url)
-    return response.json() if response.status_code == 200 else None
+    return response.json() if response.status_code == 200 else {"Error": "Failed to fetch NumVerify info."}
 
 def get_twilio_info(phonenumber):
     account_sid = os.getenv('TWILIO_ACCOUNT_SID')
     auth_token = os.getenv('TWILIO_AUTH_TOKEN')
     lookup_url = f"https://lookups.twilio.com/v1/PhoneNumbers/{phonenumber}"
     response = requests.get(lookup_url, auth=(account_sid, auth_token))
-    return response.json() if response.status_code == 200 else None
+    return response.json() if response.status_code == 200 else {"Error": "Failed to fetch Twilio info."}
 
 def get_numlookupapi_info(phonenumber):
     api_key = os.getenv('NUMLOOKUPAPI_KEY')
     url = f"https://www.numlookupapi.com/api/v1/validate/{phonenumber}?apikey={api_key}"
     response = requests.get(url)
-    return response.json() if response.status_code == 200 else None
+    return response.json() if response.status_code == 200 else {"Error": "Failed to fetch NumLookup API info."}
 
 def get_ipqualityscore_info(phonenumber):
     api_key = os.getenv('IPQUALITYSCORE_API_KEY')
     url = f"https://ipqualityscore.com/api/json/phone/{api_key}/{phonenumber}"
     response = requests.get(url)
-    return response.json() if response.status_code == 200 else None
+    return response.json() if response.status_code == 200 else {"Error": "Failed to fetch IPQualityScore info."}
 
 def extract_info(response):
     relevant_info = {}
     other_info = {}
-    
+
     if response:
         if "phone_number" in response:
             relevant_info["Phone Number"] = response.get("phone_number")
@@ -68,61 +78,138 @@ def extract_info(response):
 
     return relevant_info, other_info
 
+def get_instagram_info(username):
+    x = instaloader.Instaloader()
+    try:
+        profile = instaloader.Profile.from_username(x.context, username)
+        return {
+            "Username": profile.username,
+            "ID": profile.userid,
+            "Full Name": profile.full_name,
+            "Biography": profile.biography,
+            "Business Category": profile.business_category_name,
+            "External URL": profile.external_url,
+            "Followers": profile.followers,
+            "Following": profile.followees,
+            "Media Count": profile.mediacount,
+            "Is Private": profile.is_private,
+            "Is Verified": profile.is_verified,
+            "Profile Picture URL": profile.profile_pic_url
+        }
+    except instaloader.exceptions.InstaloaderException as e:
+        return {"Error": str(e)}
+
+def get_twitter_info(username):
+    bearer_token = os.getenv('TWITTER_BEARER_TOKEN')
+    client = tweepy.Client(bearer_token=bearer_token)
+    try:
+        user = client.get_user(username=username, user_fields=["id", "name", "username", "location", "description", "public_metrics", "verified", "created_at"])
+        if user.data:
+            user_data = user.data
+            return {
+                "Name": user_data['name'],
+                "Username": user_data['username'],
+                "User ID": user_data['id'],
+                "Description": user_data['description'],
+                "Location": user_data['location'],
+                "Followers Count": user_data['public_metrics']['followers_count'],
+                "Following Count": user_data['public_metrics']['following_count'],
+                "Tweet Count": user_data['public_metrics']['tweet_count'],
+                "Account Created At": user_data['created_at'],
+                "Verified": user_data['verified']
+            }
+        else:
+            return {"Error": "User not found on Twitter."}
+    except tweepy.TweepyException as e:
+        return {"Error": str(e)}
+
+def get_github_info(username):
+    url = f"https://api.github.com/users/{username}"
+    try:
+        response = requests.get(url)
+        if response.status_code == 200:
+            user_data = response.json()
+            return {
+                "Username": user_data['login'],
+                "ID": user_data['id'],
+                "Full Name": user_data.get('name', 'N/A'),
+                "Bio": user_data.get('bio', 'N/A'),
+                "Public Repos": user_data['public_repos'],
+                "Followers": user_data['followers'],
+                "Following": user_data['following'],
+                "Profile Created At": user_data['created_at'],
+                "Profile URL": user_data['html_url']
+            }
+        else:
+            return {"Error": f"User {username} not found on GitHub."}
+    except requests.exceptions.RequestException as e:
+        return {"Error": str(e)}
+
 def phone_number_osint(phonenumber):
     combined_relevant_info = {}
     combined_other_info = {}
-    tool_count = 0
 
-    country, service_provider, timezones = get_basic_phone_info(phonenumber)
-    combined_relevant_info.update({
-        "Phone Number": phonenumber,
-        "Country": country,
-        "Carrier": service_provider,
-        "Timezones": ", ".join(timezones)
-    })
-    tool_count += 1
+    basic_info = get_basic_phone_info(phonenumber)
+    combined_relevant_info.update(basic_info)
 
     numverify_info = get_numverify_info(phonenumber)
     if numverify_info:
         relevant, other = extract_info(numverify_info)
         combined_relevant_info.update(relevant)
         combined_other_info.update(other)
-        tool_count += 1
 
     twilio_info = get_twilio_info(phonenumber)
     if twilio_info:
         relevant, other = extract_info(twilio_info)
         combined_relevant_info.update(relevant)
         combined_other_info.update(other)
-        tool_count += 1
 
     numlookupapi_info = get_numlookupapi_info(phonenumber)
     if numlookupapi_info:
         relevant, other = extract_info(numlookupapi_info)
         combined_relevant_info.update(relevant)
         combined_other_info.update(other)
-        tool_count += 1
 
     ipqualityscore_info = get_ipqualityscore_info(phonenumber)
     if ipqualityscore_info:
         relevant, other = extract_info(ipqualityscore_info)
         combined_relevant_info.update(relevant)
         combined_other_info.update(other)
-        tool_count += 1
 
-    return combined_relevant_info, combined_other_info, tool_count
+    return combined_relevant_info, combined_other_info
 
 @app.route('/process', methods=['POST'])
 def process_input():
     data = request.json
-    user_input = data.get('input')
+    print('Received data:', data)
 
-    relevant_info, other_info, tool_count = phone_number_osint(user_input)
-    
+    phone_number = data.get('phoneNumber')
+    instagram = data.get('instagram')
+    twitter = data.get('twitter')
+    github = data.get('github')
+
+    relevant_info = {}
+    other_info = {}
+    fixed_tool_count = 5
+
+    if phone_number:
+        phone_relevant, phone_other = phone_number_osint(phone_number)
+        relevant_info.update(phone_relevant)
+        other_info.update(phone_other)
+
+    if instagram:
+        relevant_info['Instagram Info'] = get_instagram_info(instagram)
+
+    if twitter:
+        relevant_info['Twitter Info'] = get_twitter_info(twitter)
+
+    if github:
+        relevant_info['GitHub Info'] = get_github_info(github)
+
     output = {
         "relevant_info": relevant_info,
         "other_info": other_info,
-        "tool_count": tool_count
+        "tools_used": fixed_tool_count
     }
 
     return jsonify(output)
