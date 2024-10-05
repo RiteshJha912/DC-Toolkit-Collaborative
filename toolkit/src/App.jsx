@@ -1,8 +1,6 @@
 import React, { useState } from 'react'
 import './App.css' // We will add some CSS styles here
 
-const API_URL = process.env.REACT_APP_API_URL || 'http://127.0.0.1:5000/process';
-
 function App() {
   const [input, setInput] = useState('')
   const [output, setOutput] = useState('')
@@ -10,7 +8,7 @@ function App() {
   const handleSubmit = async (e) => {
     e.preventDefault()
     try {
-      const response = await fetch(API_URL, {
+      const response = await fetch('http://127.0.0.1:5000/process', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -51,7 +49,7 @@ function App() {
       <form onSubmit={handleSubmit}>
         <input
           type='text'
-          placeholder='Enter phone number'
+          placeholder='Eg. +91 XXXXX-XXXXX'
           value={input}
           onChange={(e) => setInput(e.target.value)}
           className='input-box'
