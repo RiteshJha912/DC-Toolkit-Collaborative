@@ -104,7 +104,7 @@ function App() {
 
   return (
     <div className='container'>
-      <h2>OSINT ToolKit : Phone & Social Media</h2>
+      <h2>OSINT ToolKit : Phone Number  & Social Media</h2>
       <form onSubmit={handleSubmit}>
         <input
           type='text'
