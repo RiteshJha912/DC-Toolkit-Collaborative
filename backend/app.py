@@ -9,7 +9,7 @@ import os
 load_dotenv() 
 
 app = Flask(__name__)
-CORS(app)
+CORS(app, resources={r"/process": {"origins": "https://your-frontend-url.com"}})
 
 def get_basic_phone_info(phonenumber):
     number = phonenumbers.parse(phonenumber)
