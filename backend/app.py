@@ -184,6 +184,62 @@ def get_hunter_info(email):
     response = requests.get(url)
     return response.json() if response.status_code == 200 else {"Error": "Failed to fetch Hunter.io info."}
 
+
+import re
+import dns.resolver
+
+def validate_email_format(email):
+    email_regex = r"(^[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+$)"
+    return re.match(email_regex, email)
+
+def extract_email_domain(email):
+    try:
+        return email.split('@')[1]
+    except IndexError:
+        return None
+
+def check_mx_records(domain):
+    try:
+        records = dns.resolver.resolve(domain, 'MX')
+        return [str(record.exchange) for record in records]
+    except (dns.resolver.NoAnswer, dns.resolver.NXDOMAIN, dns.exception.Timeout):
+        return []
+
+def is_disposable_email(domain):
+    disposable_domains = [
+        "mailinator.com", "10minutemail.com", "guerrillamail.com", "dispostable.com"
+        # You can add more known disposable email providers here
+    ]
+    return domain in disposable_domains
+
+def analyze_email_without_api(email):
+    info = {}
+
+    # Validate email format
+    if validate_email_format(email):
+        info["Valid Format"] = "Yes"
+    else:
+        info["Valid Format"] = "No"
+        return info
+
+    # Extract email domain
+    domain = extract_email_domain(email)
+    if domain:
+        info["Domain"] = domain
+        info["Disposable Email"] = "Yes" if is_disposable_email(domain) else "No"
+
+        # Check MX records to verify email handling setup
+        mx_records = check_mx_records(domain)
+        if mx_records:
+            info["MX Records"] = mx_records
+        else:
+            info["MX Records"] = "None (No email setup detected)"
+    else:
+        info["Domain"] = "Invalid email structure"
+
+    return info
+
+
 @app.route('/process', methods=['POST'])
 def process_input():
     data = request.json
@@ -214,7 +270,12 @@ def process_input():
         relevant_info['GitHub Info'] = get_github_info(github)
 
     if email:  # Check if email is provided
-        relevant_info['Hunter.io Info'] = get_hunter_info(email)
+        # Combine Hunter.io Info and custom email analysis
+        hunter_info = get_hunter_info(email)
+        custom_email_info = analyze_email_without_api(email)
+
+        relevant_info['Hunter.io Info'] = hunter_info
+        relevant_info['Additional Email Analysis'] = custom_email_info
 
     output = {
         "relevant_info": relevant_info,

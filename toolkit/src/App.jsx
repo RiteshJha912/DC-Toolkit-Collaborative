@@ -94,12 +94,12 @@ const formatOutput = (info) => {
                 </div>
             `)
 
-      // Reset fields
+
       setPhoneNumber('')
       setInstagram('')
       setTwitter('')
       setGithub('')
-      setEmail('') // Reset email field
+      setEmail('') 
     } catch (error) {
       console.error('Error:', error)
       setOutput(
