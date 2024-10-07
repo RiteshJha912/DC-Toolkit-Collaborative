@@ -184,7 +184,6 @@ def get_hunter_info(email):
     response = requests.get(url)
     return response.json() if response.status_code == 200 else {"Error": "Failed to fetch Hunter.io info."}
 
-
 import re
 import dns.resolver
 
@@ -208,27 +207,22 @@ def check_mx_records(domain):
 def is_disposable_email(domain):
     disposable_domains = [
         "mailinator.com", "10minutemail.com", "guerrillamail.com", "dispostable.com"
-        # You can add more known disposable email providers here
     ]
     return domain in disposable_domains
 
 def analyze_email_without_api(email):
     info = {}
 
-    # Validate email format
     if validate_email_format(email):
         info["Valid Format"] = "Yes"
     else:
         info["Valid Format"] = "No"
         return info
 
-    # Extract email domain
     domain = extract_email_domain(email)
     if domain:
         info["Domain"] = domain
         info["Disposable Email"] = "Yes" if is_disposable_email(domain) else "No"
-
-        # Check MX records to verify email handling setup
         mx_records = check_mx_records(domain)
         if mx_records:
             info["MX Records"] = mx_records
@@ -239,53 +233,42 @@ def analyze_email_without_api(email):
 
     return info
 
-
 @app.route('/process', methods=['POST'])
 def process_input():
     data = request.json
-    print('Received data:', data)
 
     phone_number = data.get('phoneNumber')
-    instagram = data.get('instagram')
-    twitter = data.get('twitter')
-    github = data.get('github')
-    email = data.get('email')  # Get email from the request
+    instagram_username = data.get('instagramUsername')
+    twitter_username = data.get('twitterUsername')
+    github_username = data.get('githubUsername')
+    email = data.get('email')
 
-    relevant_info = {}
-    other_info = {}
-    fixed_tool_count = 6  # Update the count to include the new tool
+    results = {}
 
     if phone_number:
-        phone_relevant, phone_other = phone_number_osint(phone_number)
-        relevant_info.update(phone_relevant)
-        other_info.update(phone_other)
+        phone_relevant_info, phone_other_info = phone_number_osint(phone_number)
+        results['Phone Number Relevant Info'] = phone_relevant_info
+        results['Phone Number Other Info'] = phone_other_info
 
-    if instagram:
-        relevant_info['Instagram Info'] = get_instagram_info(instagram)
+    if instagram_username:
+        instagram_info = get_instagram_info(instagram_username)
+        results['Instagram Info'] = instagram_info
 
-    if twitter:
-        relevant_info['Twitter Info'] = get_twitter_info(twitter)
+    if twitter_username:
+        twitter_info = get_twitter_info(twitter_username)
+        results['Twitter Info'] = twitter_info
 
-    if github:
-        relevant_info['GitHub Info'] = get_github_info(github)
+    if github_username:
+        github_info = get_github_info(github_username)
+        results['GitHub Info'] = github_info
 
-    if email:  # Check if email is provided
-        # Combine Hunter.io Info and custom email analysis
+    if email:
+        email_info = analyze_email_without_api(email)
         hunter_info = get_hunter_info(email)
-        custom_email_info = analyze_email_without_api(email)
+        results['Email Info'] = email_info
+        results['Hunter.io Info'] = hunter_info
 
-        relevant_info['Hunter.io Info'] = hunter_info
-        relevant_info['Additional Email Analysis'] = custom_email_info
-
-    output = {
-        "relevant_info": relevant_info,
-        "other_info": other_info,
-        "tools_used": fixed_tool_count
-    }
-
-    return jsonify(output)
-
-
+    return jsonify(results)
 
 if __name__ == '__main__':
     app.run(debug=True)

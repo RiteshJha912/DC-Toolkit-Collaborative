@@ -6,51 +6,49 @@ function App() {
   const [instagram, setInstagram] = useState('')
   const [twitter, setTwitter] = useState('')
   const [github, setGithub] = useState('')
-  const [email, setEmail] = useState('') // New state for email
+  const [email, setEmail] = useState('')
   const [output, setOutput] = useState('')
 
-const formatOutput = (info) => {
-  if (!info) return '<p>No information available.</p>'
-  const formattedInfo = []
+  const formatOutput = (info) => {
+    if (!info) return '<p>No information available.</p>'
+    const formattedInfo = []
 
-  const formatNestedObject = (obj) => {
-    return Object.entries(obj)
-      .map(([key, value]) => {
-        if (typeof value === 'object' && value !== null) {
-          return `<p><strong>${key}:</strong></p>${formatNestedObject(value)}`
-        }
-        return `<p><strong>${key}:</strong> ${
-          value !== null ? value : 'N/A'
-        }</p>`
-      })
-      .join('')
-  }
-
-  for (const [key, value] of Object.entries(info)) {
-    if (typeof value === 'object' && value !== null) {
-      formattedInfo.push(
-        `<p><strong>${key}:</strong></p>${formatNestedObject(value)}`
-      )
-    } else {
-      formattedInfo.push(
-        `<p><strong>${key}:</strong> ${value !== null ? value : 'N/A'}</p>`
-      )
+    const formatNestedObject = (obj) => {
+      return Object.entries(obj)
+        .map(([key, value]) => {
+          if (typeof value === 'object' && value !== null) {
+            return `<p><strong>${key}:</strong></p>${formatNestedObject(value)}`
+          }
+          return `<p><strong>${key}:</strong> ${
+            value !== null ? value : 'N/A'
+          }</p>`
+        })
+        .join('')
     }
+
+    for (const [key, value] of Object.entries(info)) {
+      if (typeof value === 'object' && value !== null) {
+        formattedInfo.push(
+          `<p><strong>${key}:</strong></p>${formatNestedObject(value)}`
+        )
+      } else {
+        formattedInfo.push(
+          `<p><strong>${key}:</strong> ${value !== null ? value : 'N/A'}</p>`
+        )
+      }
+    }
+
+    return formattedInfo.join('')
   }
-
-  return formattedInfo.join('')
-}
-
 
   const handleSubmit = async (e) => {
     e.preventDefault()
-    console.log('Submitting...')
     const dataToSend = {
       phoneNumber: phoneNumber || null,
       instagram: instagram || null,
       twitter: twitter || null,
       github: github || null,
-      email: email || null, // Include email in the data sent
+      email: email || null,
     }
 
     try {
@@ -62,7 +60,6 @@ const formatOutput = (info) => {
         body: JSON.stringify(dataToSend),
       })
 
-      console.log('Response received:', response)
       const data = await response.json()
 
       const inputInfo = `
@@ -94,14 +91,12 @@ const formatOutput = (info) => {
                 </div>
             `)
 
-
       setPhoneNumber('')
       setInstagram('')
       setTwitter('')
       setGithub('')
-      setEmail('') 
+      setEmail('')
     } catch (error) {
-      console.error('Error:', error)
       setOutput(
         '<p>There was an error fetching the data. Please try again.</p>'
       )
@@ -110,7 +105,7 @@ const formatOutput = (info) => {
 
   const handleFieldChange = (setter) => (e) => {
     setter(e.target.value)
-    setOutput('') // Reset output field on input change
+    setOutput('')
   }
 
   return (
@@ -149,7 +144,7 @@ const formatOutput = (info) => {
           type='text'
           placeholder='Enter Email Address'
           value={email}
-          onChange={handleFieldChange(setEmail)} // New input for email
+          onChange={handleFieldChange(setEmail)}
           className='input-box'
         />
         <button type='submit' className='submit-btn'>
