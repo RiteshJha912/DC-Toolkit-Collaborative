@@ -188,18 +188,14 @@ import re
 import socket
 
 def extract_email_info(email):
-    # Basic email format validation
     email_info = {"Valid Format": bool(re.match(r"[^@]+@[^@]+\.[^@]+", email))}
 
-    # Extract domain and check if it's common
     domain = email.split('@')[1]
     email_info['Domain'] = domain
 
-    # Check if the domain is a common provider
     common_providers = ['gmail.com', 'yahoo.com', 'outlook.com', 'hotmail.com']
     email_info['Common Provider'] = "Yes" if domain in common_providers else "No"
 
-    # MX Record Lookup (Mail server information)
     try:
         mx_records = socket.gethostbyname_ex(domain)
         email_info['MX Records'] = mx_records[2]
@@ -238,10 +234,8 @@ def process_input():
         relevant_info['GitHub Info'] = get_github_info(github)
 
     if email:  
-        # Add basic email analysis
         relevant_info['Email Info'] = extract_email_info(email)
         
-        # Fetch Hunter.io Info
         relevant_info['Hunter.io Info'] = get_hunter_info(email)
 
     output = {
