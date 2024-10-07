@@ -184,6 +184,30 @@ def get_hunter_info(email):
     response = requests.get(url)
     return response.json() if response.status_code == 200 else {"Error": "Failed to fetch Hunter.io info."}
 
+import re
+import socket
+
+def extract_email_info(email):
+    # Basic email format validation
+    email_info = {"Valid Format": bool(re.match(r"[^@]+@[^@]+\.[^@]+", email))}
+
+    # Extract domain and check if it's common
+    domain = email.split('@')[1]
+    email_info['Domain'] = domain
+
+    # Check if the domain is a common provider
+    common_providers = ['gmail.com', 'yahoo.com', 'outlook.com', 'hotmail.com']
+    email_info['Common Provider'] = "Yes" if domain in common_providers else "No"
+
+    # MX Record Lookup (Mail server information)
+    try:
+        mx_records = socket.gethostbyname_ex(domain)
+        email_info['MX Records'] = mx_records[2]
+    except socket.gaierror:
+        email_info['MX Records'] = "Domain not found or no MX records available"
+
+    return email_info
+
 @app.route('/process', methods=['POST'])
 def process_input():
     data = request.json
@@ -214,6 +238,10 @@ def process_input():
         relevant_info['GitHub Info'] = get_github_info(github)
 
     if email:  
+        # Add basic email analysis
+        relevant_info['Email Info'] = extract_email_info(email)
+        
+        # Fetch Hunter.io Info
         relevant_info['Hunter.io Info'] = get_hunter_info(email)
 
     output = {
@@ -223,7 +251,6 @@ def process_input():
     }
 
     return jsonify(output)
-
 
 
 if __name__ == '__main__':
