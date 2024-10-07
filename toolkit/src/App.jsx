@@ -1,5 +1,6 @@
 import React, { useState } from 'react'
 import './App.css'
+import logo from './assets/logo.png'
 
 function App() {
   const [phoneNumber, setPhoneNumber] = useState('')
@@ -8,6 +9,7 @@ function App() {
   const [github, setGithub] = useState('')
   const [email, setEmail] = useState('')
   const [output, setOutput] = useState('')
+  const [submitted, setSubmitted] = useState(false)
 
   const formatOutput = (info) => {
     if (!info) return '<p>No information available.</p>'
@@ -85,9 +87,9 @@ function App() {
                     <div>${formatOutput(data.other_info)}</div>
                 </div>
                 <div class="result-summary">
-                    <p>Results gathered from <strong>${
+                    <p>*Results gathered from <strong>${
                       data.tool_count || 'multiple'
-                    }</strong> sources.</p>
+                    }</strong> sources</p>
                 </div>
             `)
 
@@ -96,6 +98,7 @@ function App() {
       setTwitter('')
       setGithub('')
       setEmail('')
+      setSubmitted(true)
     } catch (error) {
       setOutput(
         '<p>There was an error fetching the data. Please try again.</p>'
@@ -106,49 +109,51 @@ function App() {
   const handleFieldChange = (setter) => (e) => {
     setter(e.target.value)
     setOutput('')
+    setSubmitted(false)
   }
 
   return (
     <div className='container'>
-      <h2>OSINT ToolKit: Phone Number & Social Media</h2>
+      <img src={logo} alt='Logo' className='logo' />
+      <h2>DeepCytes OSINT Toolkit</h2>
       <form onSubmit={handleSubmit}>
         <input
           type='text'
-          placeholder='Enter Phone Number (e.g., +91 XXXXX-XXXXX)'
+          placeholder='Enter Phone Number (e.g. +91 XXXXX-XXXXX)'
           value={phoneNumber}
           onChange={handleFieldChange(setPhoneNumber)}
-          className='input-box'
+          className={`input-box ${submitted ? '' : ''}`}
         />
         <input
           type='text'
           placeholder='Enter Instagram Username'
           value={instagram}
           onChange={handleFieldChange(setInstagram)}
-          className='input-box'
+          className={`input-box ${submitted ? '' : ''}`}
         />
         <input
           type='text'
           placeholder='Enter Twitter Username'
           value={twitter}
           onChange={handleFieldChange(setTwitter)}
-          className='input-box'
+          className={`input-box ${submitted ? '' : ''}`}
         />
         <input
           type='text'
           placeholder='Enter GitHub Username'
           value={github}
           onChange={handleFieldChange(setGithub)}
-          className='input-box'
+          className={`input-box ${submitted ? '' : ''}`}
         />
         <input
           type='text'
-          placeholder='Enter Email Address'
+          placeholder='Enter Email Address (e.g. example@gmail.com)'
           value={email}
           onChange={handleFieldChange(setEmail)}
-          className='input-box'
+          className={`input-box ${submitted ? '' : ''}`}
         />
         <button type='submit' className='submit-btn'>
-          Search it up!
+          Search
         </button>
       </form>
       {output && (
