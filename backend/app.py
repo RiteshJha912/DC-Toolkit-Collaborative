@@ -178,6 +178,12 @@ def phone_number_osint(phonenumber):
 
     return combined_relevant_info, combined_other_info
 
+def get_hunter_info(email):
+    api_key = os.getenv('HUNTER_API_KEY')
+    url = f"https://api.hunter.io/v2/email-verifier?email={email}&api_key={api_key}"
+    response = requests.get(url)
+    return response.json() if response.status_code == 200 else {"Error": "Failed to fetch Hunter.io info."}
+
 @app.route('/process', methods=['POST'])
 def process_input():
     data = request.json
@@ -187,10 +193,11 @@ def process_input():
     instagram = data.get('instagram')
     twitter = data.get('twitter')
     github = data.get('github')
+    email = data.get('email')  # Get email from the request
 
     relevant_info = {}
     other_info = {}
-    fixed_tool_count = 5
+    fixed_tool_count = 6  # Update the count to include the new tool
 
     if phone_number:
         phone_relevant, phone_other = phone_number_osint(phone_number)
@@ -206,6 +213,9 @@ def process_input():
     if github:
         relevant_info['GitHub Info'] = get_github_info(github)
 
+    if email:  # Check if email is provided
+        relevant_info['Hunter.io Info'] = get_hunter_info(email)
+
     output = {
         "relevant_info": relevant_info,
         "other_info": other_info,
@@ -213,6 +223,8 @@ def process_input():
     }
 
     return jsonify(output)
+
+
 
 if __name__ == '__main__':
     app.run(debug=True)

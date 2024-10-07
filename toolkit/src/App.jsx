@@ -6,30 +6,41 @@ function App() {
   const [instagram, setInstagram] = useState('')
   const [twitter, setTwitter] = useState('')
   const [github, setGithub] = useState('')
+  const [email, setEmail] = useState('') // New state for email
   const [output, setOutput] = useState('')
 
-  const formatOutput = (info) => {
-    if (!info) return '<p>No information available.</p>'
-    const formattedInfo = []
+const formatOutput = (info) => {
+  if (!info) return '<p>No information available.</p>'
+  const formattedInfo = []
 
-    for (const [key, value] of Object.entries(info)) {
-      if (typeof value === 'object' && value !== null) {
-        for (const [subKey, subValue] of Object.entries(value)) {
-          formattedInfo.push(
-            `<p><strong>${subKey}:</strong> ${
-              subValue !== null ? subValue : 'N/A'
-            }</p>`
-          )
+  const formatNestedObject = (obj) => {
+    return Object.entries(obj)
+      .map(([key, value]) => {
+        if (typeof value === 'object' && value !== null) {
+          return `<p><strong>${key}:</strong></p>${formatNestedObject(value)}`
         }
-      } else {
-        formattedInfo.push(
-          `<p><strong>${key}:</strong> ${value !== null ? value : 'N/A'}</p>`
-        )
-      }
-    }
-
-    return formattedInfo.join('')
+        return `<p><strong>${key}:</strong> ${
+          value !== null ? value : 'N/A'
+        }</p>`
+      })
+      .join('')
   }
+
+  for (const [key, value] of Object.entries(info)) {
+    if (typeof value === 'object' && value !== null) {
+      formattedInfo.push(
+        `<p><strong>${key}:</strong></p>${formatNestedObject(value)}`
+      )
+    } else {
+      formattedInfo.push(
+        `<p><strong>${key}:</strong> ${value !== null ? value : 'N/A'}</p>`
+      )
+    }
+  }
+
+  return formattedInfo.join('')
+}
+
 
   const handleSubmit = async (e) => {
     e.preventDefault()
@@ -39,6 +50,7 @@ function App() {
       instagram: instagram || null,
       twitter: twitter || null,
       github: github || null,
+      email: email || null, // Include email in the data sent
     }
 
     try {
@@ -54,37 +66,40 @@ function App() {
       const data = await response.json()
 
       const inputInfo = `
-        <div class="input-info">
-          <h4><strong>Provided Information:</strong></h4>
-          ${phoneNumber ? `<p>Phone Number: ${phoneNumber}</p>` : ''}
-          ${instagram ? `<p>Instagram: ${instagram}</p>` : ''}
-          ${twitter ? `<p>Twitter: ${twitter}</p>` : ''}
-          ${github ? `<p>GitHub: ${github}</p>` : ''}
-          <br/><br/>
-        </div>
-      `
+                <div class="input-info">
+                    <h4><strong>Provided Information:</strong></h4>
+                    ${phoneNumber ? `<p>Phone Number: ${phoneNumber}</p>` : ''}
+                    ${instagram ? `<p>Instagram: ${instagram}</p>` : ''}
+                    ${twitter ? `<p>Twitter: ${twitter}</p>` : ''}
+                    ${github ? `<p>GitHub: ${github}</p>` : ''}
+                    ${email ? `<p>Email: ${email}</p>` : ''}
+                    <br/><br/>
+                </div>
+            `
 
       setOutput(`
-        ${inputInfo}
-        <div class="info-section">
-          <h3><u>Relevant Information:</u></h3>
-          <div>${formatOutput(data.relevant_info)}</div>
-        </div>
-        <div class="info-section">
-          <h3><u>All Available Information:</u></h3>
-          <div>${formatOutput(data.other_info)}</div>
-        </div>
-        <div class="result-summary">
-          <p>Results gathered from <strong>${
-            data.tool_count || 'multiple'
-          }</strong> sources.</p>
-        </div>
-      `)
+                ${inputInfo}
+                <div class="info-section">
+                    <h3><u>Relevant Information:</u></h3>
+                    <div>${formatOutput(data.relevant_info)}</div>
+                </div>
+                <div class="info-section">
+                    <h3><u>All Available Information:</u></h3>
+                    <div>${formatOutput(data.other_info)}</div>
+                </div>
+                <div class="result-summary">
+                    <p>Results gathered from <strong>${
+                      data.tool_count || 'multiple'
+                    }</strong> sources.</p>
+                </div>
+            `)
 
+      // Reset fields
       setPhoneNumber('')
       setInstagram('')
       setTwitter('')
       setGithub('')
+      setEmail('') // Reset email field
     } catch (error) {
       console.error('Error:', error)
       setOutput(
@@ -94,17 +109,13 @@ function App() {
   }
 
   const handleFieldChange = (setter) => (e) => {
-    setPhoneNumber('')
-    setInstagram('')
-    setTwitter('')
-    setGithub('')
     setter(e.target.value)
-    setOutput('')
+    setOutput('') // Reset output field on input change
   }
 
   return (
     <div className='container'>
-      <h2>OSINT ToolKit : Phone Number  & Social Media</h2>
+      <h2>OSINT ToolKit: Phone Number & Social Media</h2>
       <form onSubmit={handleSubmit}>
         <input
           type='text'
@@ -132,6 +143,13 @@ function App() {
           placeholder='Enter GitHub Username'
           value={github}
           onChange={handleFieldChange(setGithub)}
+          className='input-box'
+        />
+        <input
+          type='text'
+          placeholder='Enter Email Address'
+          value={email}
+          onChange={handleFieldChange(setEmail)} // New input for email
           className='input-box'
         />
         <button type='submit' className='submit-btn'>
