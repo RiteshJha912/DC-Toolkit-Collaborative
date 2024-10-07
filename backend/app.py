@@ -184,91 +184,50 @@ def get_hunter_info(email):
     response = requests.get(url)
     return response.json() if response.status_code == 200 else {"Error": "Failed to fetch Hunter.io info."}
 
-import re
-import dns.resolver
-
-def validate_email_format(email):
-    email_regex = r"(^[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+$)"
-    return re.match(email_regex, email)
-
-def extract_email_domain(email):
-    try:
-        return email.split('@')[1]
-    except IndexError:
-        return None
-
-def check_mx_records(domain):
-    try:
-        records = dns.resolver.resolve(domain, 'MX')
-        return [str(record.exchange) for record in records]
-    except (dns.resolver.NoAnswer, dns.resolver.NXDOMAIN, dns.exception.Timeout):
-        return []
-
-def is_disposable_email(domain):
-    disposable_domains = [
-        "mailinator.com", "10minutemail.com", "guerrillamail.com", "dispostable.com"
-    ]
-    return domain in disposable_domains
-
-def analyze_email_without_api(email):
-    info = {}
-
-    if validate_email_format(email):
-        info["Valid Format"] = "Yes"
-    else:
-        info["Valid Format"] = "No"
-        return info
-
-    domain = extract_email_domain(email)
-    if domain:
-        info["Domain"] = domain
-        info["Disposable Email"] = "Yes" if is_disposable_email(domain) else "No"
-        mx_records = check_mx_records(domain)
-        if mx_records:
-            info["MX Records"] = mx_records
-        else:
-            info["MX Records"] = "None (No email setup detected)"
-    else:
-        info["Domain"] = "Invalid email structure"
-
-    return info
-
 @app.route('/process', methods=['POST'])
 def process_input():
     data = request.json
+    print('Received data:', data)
 
     phone_number = data.get('phoneNumber')
-    instagram_username = data.get('instagramUsername')
-    twitter_username = data.get('twitterUsername')
-    github_username = data.get('githubUsername')
-    email = data.get('email')
+    instagram = data.get('instagram')
+    twitter = data.get('twitter')
+    github = data.get('github')
+    email = data.get('email')  
 
-    results = {}
+    relevant_info = {}
+    other_info = {}
+    fixed_tool_count = 6 
 
     if phone_number:
-        phone_relevant_info, phone_other_info = phone_number_osint(phone_number)
-        results['Phone Number Relevant Info'] = phone_relevant_info
-        results['Phone Number Other Info'] = phone_other_info
+        phone_relevant, phone_other = phone_number_osint(phone_number)
+        relevant_info.update(phone_relevant)
+        other_info.update(phone_other)
 
-    if instagram_username:
-        instagram_info = get_instagram_info(instagram_username)
-        results['Instagram Info'] = instagram_info
+    if instagram:
+        relevant_info['Instagram Info'] = get_instagram_info(instagram)
 
-    if twitter_username:
-        twitter_info = get_twitter_info(twitter_username)
-        results['Twitter Info'] = twitter_info
+    if twitter:
+        relevant_info['Twitter Info'] = get_twitter_info(twitter)
 
-    if github_username:
-        github_info = get_github_info(github_username)
-        results['GitHub Info'] = github_info
+    if github:
+        relevant_info['GitHub Info'] = get_github_info(github)
 
-    if email:
-        email_info = analyze_email_without_api(email)
-        hunter_info = get_hunter_info(email)
-        results['Email Info'] = email_info
-        results['Hunter.io Info'] = hunter_info
+    if email:  
+        relevant_info['Hunter.io Info'] = get_hunter_info(email)
 
-    return jsonify(results)
+    output = {
+        "relevant_info": relevant_info,
+        "other_info": other_info,
+        "tools_used": fixed_tool_count
+    }
+
+    return jsonify(output)
+
+
 
 if __name__ == '__main__':
     app.run(debug=True)
+
+
+
