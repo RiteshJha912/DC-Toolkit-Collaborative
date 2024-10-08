@@ -2,6 +2,16 @@
 
 This project provides an Open-Source Intelligence (OSINT) toolkit that enables you to gather and analyze information on phone numbers, emails and social media accounts using various APIs.
 
+# Steps for Collaborators to Work on the Repository
+## Clone the repository 
+In your terminal run: 
+`git clone https://github.com/RiteshJha912/DC-Toolkit-Collaborative.git`
+
+### Navigate to the project folder:
+`cd DC-Toolkit-Collaborative`
+
+
+
 ## Frontend Setup
 
 1. Open a new terminal for the frontend.
@@ -14,6 +24,9 @@ To install all the Libraries for Frontend:
 
 To run the frontend application, use the following command in the frontend terminal:   
 `npm run dev`    
+
+
+
 
 
 ## Backend Setup
