@@ -7,7 +7,8 @@ This project provides an Open-Source Intelligence (OSINT) toolkit that enables y
 1. Open a new terminal for the frontend.
 2. Navigate to the `frontend` folder:  
    `cd toolkit`    
-   
+
+To install all the Libraries for Frontend:    
 `npm install react react-dom`   
 `npm install vite`   
 
