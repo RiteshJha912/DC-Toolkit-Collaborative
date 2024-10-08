@@ -1,6 +1,6 @@
 # DC Toolkit (Collaborative)
+To work on this repository as a collaborator, read and follow the below steps carefully.
 
-This project provides an Open-Source Intelligence (OSINT) toolkit that enables you to gather and analyze information on phone numbers, emails and social media accounts using various APIs.
 
 # Steps for Collaborators to Work on the Repository
 ## Clone the repository 
