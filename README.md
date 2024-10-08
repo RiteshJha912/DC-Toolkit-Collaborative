@@ -11,7 +11,7 @@ This project provides an Open-Source Intelligence (OSINT) toolkit that enables y
 `npm install react react-dom`   
 `npm install vite`   
 
-To run the frontend application, use the following command in the frontend terminal:
+To run the frontend application, use the following command in the frontend terminal:   
 `npm run dev`    
 
 
