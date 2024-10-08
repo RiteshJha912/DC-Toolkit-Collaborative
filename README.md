@@ -24,7 +24,7 @@ To install all the Libraries for Backend:
 `pip install -r requirements.txt`
 
 
-## API Configuration
+### API Configuration
 In the backend root folder, create a .env file with the following format:
 ### Phone Number    
 `NUMVERIFY_API_KEY=your_numverify_api_key`  
