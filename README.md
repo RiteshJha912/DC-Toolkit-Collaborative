@@ -4,7 +4,7 @@ To work on this repository as a collaborator, read and follow the below steps ca
 
 # Steps for Collaborators to Work on the Repository
 ## Clone the repository 
-In your terminal run: 
+In your terminal run:    
 `git clone https://github.com/RiteshJha912/DC-Toolkit-Collaborative.git`
 
 ### Navigate to the project folder:
