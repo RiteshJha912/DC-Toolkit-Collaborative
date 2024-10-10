@@ -7,12 +7,16 @@ import instaloader
 import tweepy
 from dotenv import load_dotenv
 import os
+import re
+import socket
 
+# Load environment variables
 load_dotenv()
 
 app = Flask(__name__)
 CORS(app)
 
+# Phone Number OSINT Functions
 def get_basic_phone_info(phonenumber):
     try:
         number = phonenumbers.parse(phonenumber)
@@ -78,6 +82,7 @@ def extract_info(response):
 
     return relevant_info, other_info
 
+# Social Media OSINT Functions
 def get_instagram_info(username):
     x = instaloader.Instaloader()
     try:
@@ -145,51 +150,9 @@ def get_github_info(username):
     except requests.exceptions.RequestException as e:
         return {"Error": str(e)}
 
-def phone_number_osint(phonenumber):
-    combined_relevant_info = {}
-    combined_other_info = {}
-
-    basic_info = get_basic_phone_info(phonenumber)
-    combined_relevant_info.update(basic_info)
-
-    numverify_info = get_numverify_info(phonenumber)
-    if numverify_info:
-        relevant, other = extract_info(numverify_info)
-        combined_relevant_info.update(relevant)
-        combined_other_info.update(other)
-
-    twilio_info = get_twilio_info(phonenumber)
-    if twilio_info:
-        relevant, other = extract_info(twilio_info)
-        combined_relevant_info.update(relevant)
-        combined_other_info.update(other)
-
-    numlookupapi_info = get_numlookupapi_info(phonenumber)
-    if numlookupapi_info:
-        relevant, other = extract_info(numlookupapi_info)
-        combined_relevant_info.update(relevant)
-        combined_other_info.update(other)
-
-    ipqualityscore_info = get_ipqualityscore_info(phonenumber)
-    if ipqualityscore_info:
-        relevant, other = extract_info(ipqualityscore_info)
-        combined_relevant_info.update(relevant)
-        combined_other_info.update(other)
-
-    return combined_relevant_info, combined_other_info
-
-def get_hunter_info(email):
-    api_key = os.getenv('HUNTER_API_KEY')
-    url = f"https://api.hunter.io/v2/email-verifier?email={email}&api_key={api_key}"
-    response = requests.get(url)
-    return response.json() if response.status_code == 200 else {"Error": "Failed to fetch Hunter.io info."}
-
-import re
-import socket
-
+# Email OSINT Functions
 def extract_email_info(email):
     email_info = {"Valid Format": bool(re.match(r"[^@]+@[^@]+\.[^@]+", email))}
-
     domain = email.split('@')[1]
     email_info['Domain'] = domain
 
@@ -204,6 +167,38 @@ def extract_email_info(email):
 
     return email_info
 
+def get_hunter_info(email):
+    api_key = os.getenv('HUNTER_API_KEY')
+    url = f"https://api.hunter.io/v2/email-verifier?email={email}&api_key={api_key}"
+    response = requests.get(url)
+    return response.json() if response.status_code == 200 else {"Error": "Failed to fetch Hunter.io info."}
+
+def get_kickbox_info(email):
+    api_key = os.getenv('KICKBOX_API_KEY')
+    url = f"https://api.kickbox.com/v2/verify?email={email}&apikey={api_key}"
+
+    try:
+        response = requests.get(url)
+        if response.status_code == 200:
+            kickbox_data = response.json()
+            return {
+                "Result": kickbox_data.get("result"),
+                "Reason": kickbox_data.get("reason"),
+                "Disposable": kickbox_data.get("disposable"),
+                "Role": kickbox_data.get("role"),
+                "Free Email Provider": kickbox_data.get("free"),
+                "Accept All": kickbox_data.get("accept_all"),
+                "Did You Mean": kickbox_data.get("did_you_mean"),
+                "Sendex Score": kickbox_data.get("sendex"),
+                "Email": kickbox_data.get("email"),
+                "Domain": kickbox_data.get("domain"),
+            }
+        else:
+            return {"Error": f"Failed to fetch data from Kickbox API. Status code: {response.status_code}"}
+    except requests.exceptions.RequestException as e:
+        return {"Error": str(e)}
+
+# Main Flask Route
 @app.route('/process', methods=['POST'])
 def process_input():
     data = request.json
@@ -213,16 +208,16 @@ def process_input():
     instagram = data.get('instagram')
     twitter = data.get('twitter')
     github = data.get('github')
-    email = data.get('email')  
+    email = data.get('email')
 
     relevant_info = {}
     other_info = {}
-    fixed_tool_count = 6 
+    fixed_tool_count = 6
 
-    if phone_number:
-        phone_relevant, phone_other = phone_number_osint(phone_number)
-        relevant_info.update(phone_relevant)
-        other_info.update(phone_other)
+    # if phone_number:
+    #     phone_relevant, phone_other = phone_number_osint(phone_number)
+    #     relevant_info.update(phone_relevant)
+    #     other_info.update(phone_other)
 
     if instagram:
         relevant_info['Instagram Info'] = get_instagram_info(instagram)
@@ -233,10 +228,10 @@ def process_input():
     if github:
         relevant_info['GitHub Info'] = get_github_info(github)
 
-    if email:  
+    if email:
         relevant_info['Email Info'] = extract_email_info(email)
-        
         relevant_info['Hunter.io Info'] = get_hunter_info(email)
+        relevant_info['Kickbox Info'] = get_kickbox_info(email)
 
     output = {
         "relevant_info": relevant_info,
@@ -246,9 +241,5 @@ def process_input():
 
     return jsonify(output)
 
-
 if __name__ == '__main__':
     app.run(debug=True)
-
-
-

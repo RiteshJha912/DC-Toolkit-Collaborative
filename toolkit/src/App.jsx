@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+import { useState } from 'react' // Removed 'React' import since it's not necessary
 import './App.css'
 import logo from './assets/logo.png'
 
@@ -9,7 +9,7 @@ function App() {
   const [github, setGithub] = useState('')
   const [email, setEmail] = useState('')
   const [output, setOutput] = useState('')
-  const [submitted, setSubmitted] = useState(false)
+  // Removed 'submitted' state since it was not used
 
   const formatOutput = (info) => {
     if (!info) return '<p>No information available.</p>'
@@ -64,52 +64,51 @@ function App() {
 
       const data = await response.json()
 
+      console.log('Response from backend:', data)
+
       const inputInfo = `
-                <div class="input-info">
-                    <h4><strong>Provided Information:</strong></h4>
-                    ${phoneNumber ? `<p>Phone Number: ${phoneNumber}</p>` : ''}
-                    ${instagram ? `<p>Instagram: ${instagram}</p>` : ''}
-                    ${twitter ? `<p>Twitter: ${twitter}</p>` : ''}
-                    ${github ? `<p>GitHub: ${github}</p>` : ''}
-                    ${email ? `<p>Email: ${email}</p>` : ''}
-                    <br/><br/>
-                </div>
-            `
+        <div class="input-info">
+          <h4><strong>Provided Information:</strong></h4>
+          ${phoneNumber ? `<p>Phone Number: ${phoneNumber}</p>` : ''}
+          ${instagram ? `<p>Instagram: ${instagram}</p>` : ''}
+          ${twitter ? `<p>Twitter: ${twitter}</p>` : ''}
+          ${github ? `<p>GitHub: ${github}</p>` : ''}
+          ${email ? `<p>Email: ${email}</p>` : ''}
+          <br/><br/>
+        </div>
+      `
 
       setOutput(`
-                ${inputInfo}
-                <div class="info-section">
-                    <h3><u>Relevant Information:</u></h3>
-                    <div>${formatOutput(data.relevant_info)}</div>
-                </div>
-                <div class="info-section">
-                    <h3><u>All Available Information:</u></h3>
-                    <div>${formatOutput(data.other_info)}</div>
-                </div>
-                <div class="result-summary">
-                    <p>*Results gathered from <strong>${
-                      data.tool_count || 'multiple'
-                    }</strong> sources</p>
-                </div>
-            `)
+        ${inputInfo}
+        <div class="info-section">
+          <h3><u>Relevant Information:</u></h3>
+          <div>${formatOutput(data.relevant_info)}</div>
+        </div>
+        <div class="info-section">
+          <h3><u>All Available Information:</u></h3>
+          <div>${formatOutput(data.other_info)}</div>
+        </div>
+        <div class="result-summary">
+          <p>*Results gathered from <strong>${
+            data.tool_count || 'multiple'
+          }</strong> sources</p>
+        </div>
+      `)
 
+      // Clear input fields after submission
       setPhoneNumber('')
       setInstagram('')
       setTwitter('')
       setGithub('')
       setEmail('')
-      setSubmitted(true)
-    } catch (error) {
-      setOutput(
-        '<p>There was an error fetching the data. Please try again.</p>'
-      )
+    } catch {
+      setOutput('<p>There was an error fetching the data. Please try again.</p>')
     }
   }
 
   const handleFieldChange = (setter) => (e) => {
     setter(e.target.value)
     setOutput('')
-    setSubmitted(false)
   }
 
   return (
@@ -122,45 +121,42 @@ function App() {
           placeholder='Enter Phone Number (e.g. +91 XXXXX-XXXXX)'
           value={phoneNumber}
           onChange={handleFieldChange(setPhoneNumber)}
-          className={`input-box ${submitted ? '' : ''}`}
+          className='input-box'
         />
         <input
           type='text'
           placeholder='Enter Instagram Username'
           value={instagram}
           onChange={handleFieldChange(setInstagram)}
-          className={`input-box ${submitted ? '' : ''}`}
+          className='input-box'
         />
         <input
           type='text'
           placeholder='Enter Twitter Username'
           value={twitter}
           onChange={handleFieldChange(setTwitter)}
-          className={`input-box ${submitted ? '' : ''}`}
+          className='input-box'
         />
         <input
           type='text'
           placeholder='Enter GitHub Username'
           value={github}
           onChange={handleFieldChange(setGithub)}
-          className={`input-box ${submitted ? '' : ''}`}
+          className='input-box'
         />
         <input
           type='text'
           placeholder='Enter Email Address (e.g. example@gmail.com)'
           value={email}
           onChange={handleFieldChange(setEmail)}
-          className={`input-box ${submitted ? '' : ''}`}
+          className='input-box'
         />
         <button type='submit' className='submit-btn'>
           Search
         </button>
       </form>
       {output && (
-        <div
-          className='output-box'
-          dangerouslySetInnerHTML={{ __html: output }}
-        />
+        <div className='output-box' dangerouslySetInnerHTML={{ __html: output }} />
       )}
     </div>
   )
